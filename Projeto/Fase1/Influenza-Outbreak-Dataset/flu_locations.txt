@@ -1,0 +1,48 @@
+wyoming 
+colorado 
+nebraska 
+washington 
+rhode island 
+tennessee 
+wisconsin 
+nevada 
+maine 
+north dakota 
+mississippi 
+new jersey 
+oklahoma 
+delaware 
+minnesota 
+north carolina 
+illinois 
+new york 
+arkansas 
+indiana 
+maryland 
+louisiana 
+idaho 
+arizona 
+iowa 
+west virginia 
+michigan 
+kansas 
+utah 
+virginia 
+oregon 
+connecticut 
+california 
+massachusetts 
+alaska 
+vermont 
+georgia 
+pennsylvania 
+florida 
+hawaii 
+district of columbia 
+new hampshire 
+texas 
+missouri 
+south carolina 
+ohio 
+alabama 
+new mexico 
