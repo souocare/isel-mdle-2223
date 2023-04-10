@@ -3,11 +3,14 @@
 ### Grupo 08 - Pedro Diogo A47573, Gonçalo Fonseca A50185 ###
 ### Data - 14/04/2023
 
+### SVM package ###
+library(e1071)
+
 ### Setup the dataset ###
 
 read_data <- function(path) {
   # Read the dataset
-  dataset <- read.csv(path)
+  dataset <- read.csv(path, header = FALSE, sep = ',')
   return(dataset)
 }
 
@@ -21,11 +24,11 @@ join <- function(data, attributes) {
   # Join the dataset and the keywords
   names(data) <- attributes
 
-  # check if there are any missing column names
+  # Check if there are any missing column names
   if (any(is.na(names(data)))) {
-    na_cols <- which(is.na(names(data))) # get the indices of the NA column names
+    na_cols <- which(is.na(names(data))) # Get the indices of the NA column names
     for (i in na_cols) {
-      names(data)[i] <- paste0("dynamic_", i) # name the columns iteratively
+      names(data)[i] <- paste0("dynamic_", i) # Name the columns iteratively
     }
   }
 
@@ -51,88 +54,118 @@ calculate_mm_diff <- function(data) {
   means <- apply(data, 2, mean)
   medians <- apply(data, 2, median)
   mean_median_diff <- abs(means - medians)
-  # sort the vectors
+
+  # Sort the vectors
   sorted_mean_median_diff <- sort(mean_median_diff, decreasing = TRUE)
 
   for (i in seq_along(mean_median_diff)) {
-    cat("Feature", colnames(data)[i], "mean-median:",
-        sorted_mean_median_diff[i], "\n")
+    cat("Feature", colnames(data)[i], "mean-median:", sorted_mean_median_diff[i], "\n")
   }
 
   return(sorted_mean_median_diff)
 }
 
-calculate_cumsum <- function(values, thresholds) {
+calculate_n_features <- function(values, thresholds) {
   # Compute the adequate number of features for each threshold
   n_features <- sapply(thresholds, function(x) sum(cumsum(values) <= sum(values) * x))
 
   # Print the adequate number of features for each threshold
-  cat(paste0("For threshold ", thresholds[1] * 100, "%, use ",
-             n_features[1], " features.\n"))
-  cat(paste0("For threshold ", thresholds[2] * 100, "%, use ",
-             n_features[2], " features.\n"))
-  cat(paste0("For threshold ", thresholds[3] * 100, "%, use ",
-             n_features[3], " features.\n"))
+  cat(paste0("For threshold ", thresholds[1] * 100, "%, use ", n_features[1], " features.\n"))
+  cat(paste0("For threshold ", thresholds[2] * 100, "%, use ", n_features[2], " features.\n"))
+  cat(paste0("For threshold ", thresholds[3] * 100, "%, use ", n_features[3], " features.\n"))
+
+  return(n_features)
 }
 
 ### Feature reduction (unsupervised) ####
 
 calculate_pca <- function(data) {
-  pca <- prcomp(data, center = FALSE, scale. = FALSE)
-
-  plot(pca$sdev^2, type = 'p', main = 'PCA', xlab = 'Principal component', ylab = 'Eigenvalue', xlim = c(0,20)) b  
+  pca <- prcomp(data)
+  plot(pca$sdev, type = 'p', main = 'PCA', xlab = 'Principal component', ylab = 'Eigenvalue')
   return(pca)
 }
 
 calculate_svd <- function(data) {
   svd <- svd(data)
-
-  plot(svd$d^2, type = 'p', main = 'SVD', xlab = "Singular value", ylab = "Magnitude")
+  plot(svd$d, type = 'p', main = 'SVD', xlab = "Singular value", ylab = "Magnitude")
   return(svd)
 }
 
-reduce_with_pca <- function(data, decomposition_values) {
-  mydata_pca_new <- predict(decomposition_values, newdata = data)[, 1:10]
+reduce_with_pca <- function(data, decomposition_values, number_of_pcs) {
+  mydata_pca_new <- predict(decomposition_values, newdata = data)[, 1:number_of_pcs]
   return(mydata_pca_new)
-
 }
 
 reduce_with_svd <- function(decomposition_values) {
-
-
+  # TODO
 }
+
+test_model <- function(x_train, y_train, x_test, y_test) {
+  # Train the model
+  model <- svm(x_train, factor(unlist(y_train)), kernel = 'linear', scale = FALSE)
+
+  # Test the model
+  model_predictions <- predict(model, x_test)
+
+  # Evaluate the model
+  confusion_matrix <- table(model_predictions, unlist(y_test))
+  print(confusion_matrix)
+}
+
 
 ### main function ###
 
 main <- function() {
-  data_path <- "Projeto/Fase1/Influenza-Outbreak-Dataset/train/train_data_1.csv"
+
+  # Flu keywords
   keywords_path <- "Projeto/Fase1/Influenza-Outbreak-Dataset/flu_keywords.txt"
-
-  dataset <- read_data(data_path)
   keywords <- read_keywords(keywords_path)
-  dataset <- join(dataset, keywords)
 
-  variances <- calculate_variance(dataset)
-  mm_diff <- calculate_mm_diff(dataset)
+  # Train data
+  x_train_path <- "Projeto/Fase1/Influenza-Outbreak-Dataset/train/train_data_1.csv"
+  y_train_path <- "Projeto/Fase1/Influenza-Outbreak-Dataset/train/train_labels_1.csv"
 
-  # TODO - fix plots (function maybe?)
-  barplot(variances, main = "Variance per Feature", xlab = "Features",
-          ylab = "Variance", xlim = c(0, 10), ylim = c(0, 0.8))
+  x_train <- read_data(x_train_path)
+  x_train <- join(x_train, keywords)
+  y_train <- read_data(y_train_path)
 
-  barplot(mm_diff, main = "Mean Median per Feature",
-          xlab = "Features", ylab = "Mean Median", xlim = c(0, 10), ylim = c(0, 0.5))
+  # Test data
+  x_test_path <- "Projeto/Fase1/Influenza-Outbreak-Dataset/test/test_data_1.csv"
+  y_test_path <- "Projeto/Fase1/Influenza-Outbreak-Dataset/test/test_labels_1.csv"
 
-  thresholds <- c(0.1, 0.5, 0.9)
+  x_test <- read_data(x_test_path)
+  x_test <- join(x_test, keywords)
+  y_test <- read_data(y_test_path)
 
-  calculate_cumsum(variances, thresholds)
+  variances <- calculate_variance(x_train)
+  mm_diff <- calculate_mm_diff(x_train)
 
-  calculate_cumsum(mm_diff, thresholds)
+  # TODO - fix plots
+  # barplot(variances, main = "Variance per Feature", xlab = "Features", ylab = "Variance")
 
-  pca_result <- calculate_pca(dataset)
-  svd_result <- calculate_svd(dataset)
+  # barplot(mm_diff, main = "Mean Median per Feature", xlab = "Features", ylab = "Mean Median")
 
+  thresholds <- c(0.8, 0.9, 0.95)
 
-  x <- reduce_with_pca(dataset, pca_result)
+  calculate_n_features(variances, thresholds)
+
+  calculate_n_features(mm_diff, thresholds)
+
+  # PCA
+  pca_result <- calculate_pca(x_train)
+
+  n_pcs <- calculate_n_features(pca_result$sdev, thresholds)
+
+  reduced_x_train <- reduce_with_pca(x_train, pca_result, n_pcs[3]) # Index 3 corresponds to the highest threshold value
+  reduced_x_test <- reduce_with_pca(x_test, pca_result, n_pcs[3])
+
+  # Test with non-reduced dataset
+  cat("Confusion Matrix for model with non-reduced dataset:")
+  test_model(x_train, y_train, x_test, y_test)
+
+  # Test with reduced dataset
+  cat("Confusion Matrix for model with reduced dataset using PCA:")
+  test_model(reduced_x_train, y_train, reduced_x_test, y_test)
 }
 
 main()
