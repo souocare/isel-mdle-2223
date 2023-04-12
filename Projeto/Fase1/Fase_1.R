@@ -1,10 +1,8 @@
 ### ISEL - Instituto Superior de Engenharia de Lisboa ###
 ### MDLE - Mineração de Dados em Larga Escala ###
+### Projeto - Fase 1 ###
 ### Grupo 08 - Pedro Diogo A47573, Gonçalo Fonseca A50185 ###
 ### Data - 14/04/2023
-
-### SVM package ###
-library(e1071)
 
 ### Setup the dataset ###
 
@@ -91,26 +89,27 @@ calculate_svd <- function(data) {
   return(svd)
 }
 
-reduce_with_pca <- function(data, decomposition_values, number_of_pcs) {
-  mydata_pca_new <- predict(decomposition_values, newdata = data)[, 1:number_of_pcs]
-  return(mydata_pca_new)
+reduce_with_pca <- function(data, decomposition_values, n_features) {
+  reduced_dataset <- predict(decomposition_values, newdata = data)[, 1:n_features]
+  return(reduced_dataset)
 }
 
-reduce_with_svd <- function(decomposition_values) {
-  # TODO
+reduce_with_svd <- function(decomposition_values, n_features) {
+  reduced_dataset <- decomposition_values$u[, 1:n_features] %*% diag(decomposition_values$d[1:n_features]) %*% t(decomposition_values$v[, 1:n_features])
+  return(reduced_dataset)
 }
 
-test_model <- function(x_train, y_train, x_test, y_test) {
-  # Train the model
-  model <- svm(x_train, factor(unlist(y_train)), kernel = 'linear', scale = FALSE)
-
-  # Test the model
-  model_predictions <- predict(model, x_test)
-
-  # Evaluate the model
-  confusion_matrix <- table(model_predictions, unlist(y_test))
-  print(confusion_matrix)
-}
+# test_model <- function(x_train, y_train, x_test, y_test) {
+#   # Train the model
+#   model <- svm(x_train, factor(unlist(y_train)), kernel = 'linear', scale = FALSE)
+#
+#   # Test the model
+#   model_predictions <- predict(model, x_test)
+#
+#   # Evaluate the model
+#   confusion_matrix <- table(model_predictions, unlist(y_test))
+#   print(confusion_matrix)
+# }
 
 
 ### main function ###
@@ -140,32 +139,51 @@ main <- function() {
   variances <- calculate_variance(x_train)
   mm_diff <- calculate_mm_diff(x_train)
 
-  # TODO - fix plots
-  # barplot(variances, main = "Variance per Feature", xlab = "Features", ylab = "Variance")
+  plot(variances, main = "Variance", xlab = "Features", ylab = "Relevance")
 
-  # barplot(mm_diff, main = "Mean Median per Feature", xlab = "Features", ylab = "Mean Median")
+  plot(mm_diff, main = "Mean Median Difference", xlab = "Features", ylab = "Relevance")
 
-  thresholds <- c(0.8, 0.9, 0.95)
+  thresholds <- c(0.9, 0.95, 0.99)
 
+  print("# of features based on variance:")
   calculate_n_features(variances, thresholds)
 
+  print("# of features based on mean median difference:")
   calculate_n_features(mm_diff, thresholds)
 
   # PCA
   pca_result <- calculate_pca(x_train)
 
-  n_pcs <- calculate_n_features(pca_result$sdev, thresholds)
+  print("# of features based on PCA:")
+  n_features_pca <- calculate_n_features(pca_result$sdev, thresholds)
 
-  reduced_x_train <- reduce_with_pca(x_train, pca_result, n_pcs[3]) # Index 3 corresponds to the highest threshold value
-  reduced_x_test <- reduce_with_pca(x_test, pca_result, n_pcs[3])
+  reduced_x_train <- reduce_with_pca(x_train, pca_result, n_features_pca[3]) # Index 3 corresponds to the highest threshold value
+  reduced_x_test <- reduce_with_pca(x_test, pca_result, n_features_pca[3])
 
-  # Test with non-reduced dataset
-  cat("Confusion Matrix for model with non-reduced dataset:")
-  test_model(x_train, y_train, x_test, y_test)
+  # # Test with non-reduced dataset
+  # cat("Confusion Matrix for model with non-reduced dataset:")
+  # test_model(x_train, y_train, x_test, y_test)
+  #
+  # # Test with reduced dataset
+  # cat("Confusion Matrix for model with reduced dataset using PCA:")
+  # test_model(reduced_x_train, y_train, reduced_x_test, y_test)
 
-  # Test with reduced dataset
-  cat("Confusion Matrix for model with reduced dataset using PCA:")
-  test_model(reduced_x_train, y_train, reduced_x_test, y_test)
+  # SVD
+  svd_result <- calculate_svd(x_train)
+
+  print("# of features based on SVD:")
+  n_features_svd <- calculate_n_features(svd_result$d, thresholds)
+
+  reduced_x_train <- reduce_with_svd(svd_result, n_features_svd[3])
+  reduced_x_test <- reduce_with_svd(svd_result, n_features_svd[3])
+
+  # # Test with non-reduced dataset
+  # cat("Confusion Matrix for model with non-reduced dataset:")
+  # test_model(x_train, y_train, x_test, y_test)
+  #
+  # # Test with reduced dataset
+  # cat("Confusion Matrix for model with reduced dataset using SVD:")
+  # test_model(reduced_x_train, y_train, reduced_x_test, y_test)
 }
 
 main()
