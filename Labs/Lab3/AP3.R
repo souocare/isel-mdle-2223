@@ -14,8 +14,8 @@ sc <- spark_connect('local', version = '3.3.2', hadoop_version = '3', config = l
 
 ################# Load data ################
 basepath <- "/Projeto/Fase1/Influenza-Outbreak-Dataset"
-tr.data <- c("train_data_25.csv","train_data_30.csv") #The data to use
-labels<- c("train_labels_25.csv","train_labels_30.csv") #the lables for the data
+tr.data <- c("train_data_25.csv", "train_data_30.csv") #The data to use
+labels<- c("train_labels_25.csv", "train_labels_30.csv") #the lables for the data
 
 
 fun1 <- function(i) { #read CSV data

@@ -90,12 +90,12 @@ calculate_svd <- function(data) {
 }
 
 reduce_with_pca <- function(data, decomposition_values, n_features) {
-  reduced_dataset <- predict(decomposition_values, newdata = data)[, 1:n_features]
+  reduced_dataset <- scale(data, scale = FALSE) %*% decomposition_values$rotation[, 1:n_features]
   return(reduced_dataset)
 }
 
 reduce_with_svd <- function(decomposition_values, n_features) {
-  reduced_dataset <- decomposition_values$u[, 1:n_features] %*% diag(decomposition_values$d[1:n_features]) %*% t(decomposition_values$v[, 1:n_features])
+  reduced_dataset <- decomposition_values$u %*% diag(decomposition_values$d)[, 1:n_features] %*% t(decomposition_values$v[1:n_features, 1:n_features])
   return(reduced_dataset)
 }
 
