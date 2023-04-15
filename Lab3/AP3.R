@@ -209,6 +209,9 @@ df.train_r <- as.data.frame(df.train)
 
 # Apply Borderline-SMOTE sampling
 df.train_oversampled <- BLSMOTE(df.train_r[, -1], df.train_r[, 1])
+sink("myTest.dat")
+writeLines(unlist(lapply(k, paste, collapse=" ")))
+sink()
 # # # Convert oversampled data back to Spark DataFrame
 df.train_oversampled <- as.data.frame(df.train_oversampled)
 # df.train_oversampled <- sdf_copy_to(sc, df.train_oversampled)
