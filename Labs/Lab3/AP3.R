@@ -5,7 +5,7 @@ library(smotefamily) #For SMOTE sampling
 library(data.table) #To be used when possible, as a more performant data.frame
 
 if(!exists("printConfusionMatrix", mode="function")) 
-  source("Lab3/helperfunctions.R")
+  source("helperfunctions.R")
 
 ################# Spark setup ################
 spark_disconnect_all() #just preventive code
@@ -13,9 +13,9 @@ sc <- spark_connect('local', version = '3.3.2', hadoop_version = '3', config = l
 
 
 ################# Load data ################
-basepath <- "~/Documents/Mestrado/2oSemestre/MDLE/isel-mdle-2223/Projeto/Fase1/Influenza-Outbreak-Dataset"
-tr.data <- c("train_data_25.csv","train_data_30.csv") #The data to use
-labels<- c("train_labels_25.csv","train_labels_30.csv") #the lables for the data
+basepath <- "/Projeto/Fase1/Influenza-Outbreak-Dataset"
+tr.data <- c("train_data_25.csv", "train_data_30.csv") #The data to use
+labels<- c("train_labels_25.csv", "train_labels_30.csv") #the lables for the data
 
 
 fun1 <- function(i) { #read CSV data
@@ -34,9 +34,6 @@ names(df.l) <-c("CLASS") #rename dependent variable
 df.local<- cbind(df.l,df) #bind them together
 
 df <- copy_to(sc, df.local)
-
-#### CHECK sdf_schema OF DF ######
-View(sdf_schema(df))
 
 ################# G2 #######################
 #Glimpse of the data set
@@ -72,5 +69,4 @@ idx <- c(1,2,5,6,9,10,11,14,16,17,19,21,24,25,26,31,32,33,34,35,41,44,49,50,54)
 #TODO
 
 ################# Spark cleanup ################
-print("--- Spark cleanup ---")
 spark_disconnect(sc)
