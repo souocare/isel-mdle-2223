@@ -13,18 +13,20 @@ sc <- spark_connect('local', version = '3.3.2', hadoop_version = '3', config = l
 
 
 ################# Load data ################
-basepath <- "../data/Influenza-Outbreak-Dataset"
+basepath <- "/Projeto/Fase1/Influenza-Outbreak-Dataset"
 tr.data <- c("train_data_25.csv","train_data_30.csv") #The data to use
 labels<- c("train_labels_25.csv","train_labels_30.csv") #the lables for the data
 
 
 fun1 <- function(i) { #read CSV data
+print(paste(basepath,"train",i,sep = "/"))
   read.csv(paste(basepath,"train",i,sep = "/"), header=FALSE,stringsAsFactors = FALSE)
 }
 
 fun2 <- function(i) { #read and transpose CSV data
   read.csv(paste(basepath,"train",i,sep = "/"), header=FALSE,stringsAsFactors = FALSE) %>% t %>% as.data.table
 }
+
 
 df<-do.call(rbind, lapply(tr.data, fun1 )) #bind csv together
 df.l<-do.call(rbind, lapply(labels, fun2 )) #bind class together
