@@ -12,17 +12,17 @@ read_data <- function(path) {
   return(dataset)
 }
 
-### Feature selection (unsupervised) ###
+### Feature selection ###
 
 calculate_variance <- function(data) {
   variances <- apply(data, 2, var)
-  # sort the vectors
-  sorted_variances <- sort(variances, decreasing = TRUE)
 
   for (i in seq_along(variances)) {
-    cat("Feature", colnames(data)[i], "variance:",
-        sorted_variances[i], "\n")
+    cat("Feature", colnames(data)[i], "variance:", variances[i], "\n")
   }
+
+  # sort the vectors
+  sorted_variances <- sort(variances, decreasing = TRUE)
 
   return(sorted_variances)
 }
@@ -32,12 +32,12 @@ calculate_mm_diff <- function(data) {
   medians <- apply(data, 2, median)
   mean_median_diff <- abs(means - medians)
 
+  for (i in seq_along(mean_median_diff)) {
+    cat("Feature", colnames(data)[i], "mean-median:", mean_median_diff[i], "\n")
+  }
+
   # Sort the vectors
   sorted_mean_median_diff <- sort(mean_median_diff, decreasing = TRUE)
-
-  for (i in seq_along(mean_median_diff)) {
-    cat("Feature", colnames(data)[i], "mean-median:", sorted_mean_median_diff[i], "\n")
-  }
 
   return(sorted_mean_median_diff)
 }
@@ -54,7 +54,7 @@ calculate_n_features <- function(values, thresholds) {
   return(n_features)
 }
 
-### Feature reduction (unsupervised) ####
+### Feature reduction ####
 
 calculate_pca <- function(data, name) {
   pca <- prcomp(data)
@@ -69,14 +69,20 @@ calculate_svd <- function(data, name) {
 }
 
 reduce_with_pca <- function(data, decomposition_values, n_features) {
-  reduced_dataset <- scale(data, scale = FALSE) %*% decomposition_values$rotation[,1:n_features]
+  reduced_dataset <- scale(data, scale = FALSE) %*% decomposition_values$rotation[, 1:n_features]
   return(reduced_dataset)
 }
 
 reduce_with_svd <- function(decomposition_values, n_features) {
-  reduced_dataset <- decomposition_values$u %*% diag(decomposition_values$d)[, 1:n_features] %*% t(decomposition_values$v[1:n_features, 1:n_features])
+  reduced_dataset <- decomposition_values$u %*%
+    diag(decomposition_values$d)[, 1:n_features] %*%
+    t(decomposition_values$v[1:n_features, 1:n_features])
+
   return(reduced_dataset)
 }
+
+### Feature discretization ###
+
 
 ### main function ###
 
@@ -85,24 +91,26 @@ main <- function() {
   influenza_path <- "Labs/Lab2/R/train_data_1.csv"
 
   diabetes_dataset <- read_data(diabetes_path)
+  # remove labels
+  diabetes_dataset <- diabetes_dataset[, -ncol(diabetes_dataset)]
   influenza_dataset <- read_data(influenza_path)
 
   # 1.a)
-  diabetes_variances <- calculate_variance(diabetes_dataset[, -ncol(diabetes_dataset)])
-  plot(diabetes_variances, main = "Diabetes - Variance", xlab = "Features", ylab = "Relevance", type = 'l')
+  print("Diabetes dataset variance:")
+  diabetes_variances <- calculate_variance(diabetes_dataset)
+  plot(diabetes_variances, main = "Diabetes - Variance", xlab = "Features", ylab = "Relevance")
 
-  diabetes_mm_diff <- calculate_mm_diff(diabetes_dataset[, -ncol(diabetes_dataset)])
-  plot(diabetes_mm_diff, main = "Diabetes - Mean median difference", xlab = "Features", ylab = "Relevance", type = 'l')
+  print("Diabetes dataset mean media difference:")
+  diabetes_mm_diff <- calculate_mm_diff(diabetes_dataset)
+  plot(diabetes_mm_diff, main = "Diabetes - Mean median difference", xlab = "Features", ylab = "Relevance")
 
+  print("Influenza dataset variance:")
   influenza_variances <- calculate_variance(influenza_dataset)
-  plot(influenza_variances, main = "Influzenza - Variance", xlab = "Features", ylab = "Relevance", type = 'l', xlim = c(0,130))
+  plot(influenza_variances, main = "Influzenza - Variance", xlab = "Features", ylab = "Relevance")
 
+  print("Influenza dataset mean media difference:")
   influenza_mm_diff <- calculate_mm_diff(influenza_dataset)
-  plot(influenza_mm_diff, main = "Influzenza - Mean Median Difference", xlab = "Features", ylab = "Relevance", type = 'l', xlim = c(0,130))
-
-  # Resposta: No dataset dos diabetes, podemos ver que existe um atributo que possui a maioria relevância total quando usamos
-  # a variância e a diferença da média das medianas. Já no dataset de influenza podemos ver que a partir dos cento e pouco atributos
-  # começamos a estabilizar o valor da relevância.
+  plot(influenza_mm_diff, main = "Influzenza - Mean Median Difference", xlab = "Features", ylab = "Relevance")
 
   # 1.b)
   thresholds <- c(0.9, 0.95, 0.99)
@@ -110,39 +118,29 @@ main <- function() {
   print('Number of features for Diabetes dataset using vairance')
   diabetes_n_features_variance <- calculate_n_features(diabetes_variances, thresholds)
   print('Number of features for Diabetes dataset using mm diff')
-  diabetes_n_features_mm_diff <- calculate_n_features(diabetes_variances, thresholds)
+  diabetes_n_features_mm_diff <- calculate_n_features(diabetes_mm_diff, thresholds)
   print('Number of features for Influenza dataset using vairance')
-  influenza_n_features_variance <- calculate_n_features(diabetes_variances, thresholds)
+  influenza_n_features_variance <- calculate_n_features(influenza_variances, thresholds)
   print('Number of features for Influenza dataset using mm diff')
-  influenza_n_features_mm_diff <- calculate_n_features(diabetes_variances, thresholds)
-
-  # Resposta: Foram considerados como valores de threshold, 90%, 95% e 99% visto que queremos manter
-  # maior parte da relevância no nossos dados.
+  influenza_n_features_mm_diff <- calculate_n_features(influenza_mm_diff, thresholds)
 
   # 2.a)
-  diabetes_eigenvalues <- calculate_pca(diabetes_dataset[, -ncol(diabetes_dataset)], 'Diabetes')
+  diabetes_eigenvalues <- calculate_pca(diabetes_dataset, 'Diabetes')
   influenza_eigenvalues <- calculate_pca(influenza_dataset, 'Influenza')
 
-  # Resposta: Olhando para os gráficos gerados após ter sido feita a decomposição PCA,
-  # percebemos que para o dataset de diabetes vemos que a partir do PC 4 ou 5 já começa a estabilizar.
-  # No caso do dataset influenza vemos que nos 270 já temos uma curva que começa a ficar uniforme.
-  # Logo podemos admitir que m pode ser 270.
-
   # 2.b)
-  diabetes_singular_values <- calculate_svd(diabetes_dataset[, -ncol(diabetes_dataset)], 'Diabetes')
+  diabetes_singular_values <- calculate_svd(diabetes_dataset, 'Diabetes')
   influenza_singular_values <- calculate_svd(influenza_dataset, 'Influenza')
 
-  # Resposta: Utilizando a decomposição SVD obtemos resultados muito semelhantes à alínea
-  # anterior. Podemos admitir então a mesma dimensão obtida anteriormente.
-
   # 2.c)
-  diabetes_reduced_pca <- reduce_with_pca(diabetes_dataset[, -ncol(diabetes_dataset)], diabetes_eigenvalues, 5)
+  diabetes_reduced_pca <- reduce_with_pca(diabetes_dataset, diabetes_eigenvalues, 5)
   diabetes_reduced_svd <- reduce_with_svd(diabetes_singular_values, 5)
 
   influenza_reduced_pca <- reduce_with_pca(influenza_dataset, influenza_eigenvalues, 270)
   influenza_reduced_svd <- reduce_with_svd(influenza_singular_values, 270)
 
-  
+  # 3 TODO
+
 }
 
 main()
