@@ -4,6 +4,10 @@
 ### Grupo 08 - Pedro Diogo A47573, Gonçalo Fonseca A50185 ###
 ### Data - 19/04/2023
 
+# Libs for discretization
+library(arules)
+library(arulesCBA)
+
 ### Setup the dataset ###
 
 read_data <- function(path) {
@@ -81,9 +85,6 @@ reduce_with_svd <- function(decomposition_values, n_features) {
   return(reduced_dataset)
 }
 
-### Feature discretization ###
-
-
 ### main function ###
 
 main <- function() {
@@ -91,6 +92,7 @@ main <- function() {
   influenza_path <- "Labs/Lab2/R/train_data_1.csv"
 
   diabetes_dataset <- read_data(diabetes_path)
+  diabetes_dataset_ex3 <- diabetes_dataset
   # remove labels
   diabetes_dataset <- diabetes_dataset[, -ncol(diabetes_dataset)]
   influenza_dataset <- read_data(influenza_path)
@@ -139,8 +141,14 @@ main <- function() {
   influenza_reduced_pca <- reduce_with_pca(influenza_dataset, influenza_eigenvalues, 270)
   influenza_reduced_svd <- reduce_with_svd(influenza_singular_values, 270)
 
-  # 3 TODO
+  # 3.
+  data_matrix <- as.matrix(diabetes_dataset)
+  unsupervised_discretization <- discretize(data_matrix, "frequency", 5)
+  View(unsupervised_discretization)
 
+  diabetes_dataset_ex3$V9 <- as.factor(diabetes_dataset_ex3$V9)
+  supervised_discretization <- discretizeDF.supervised(V9 ~ ., diabetes_dataset_ex3, 'mdlp')
+  View(supervised_discretization)
 }
 
 main()

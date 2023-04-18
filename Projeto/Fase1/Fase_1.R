@@ -99,19 +99,6 @@ reduce_with_svd <- function(decomposition_values, n_features) {
   return(reduced_dataset)
 }
 
-# test_model <- function(x_train, y_train, x_test, y_test) {
-#   # Train the model
-#   model <- svm(x_train, factor(unlist(y_train)), kernel = 'linear', scale = FALSE)
-#
-#   # Test the model
-#   model_predictions <- predict(model, x_test)
-#
-#   # Evaluate the model
-#   confusion_matrix <- table(model_predictions, unlist(y_test))
-#   print(confusion_matrix)
-# }
-
-
 ### main function ###
 
 main <- function() {
@@ -160,14 +147,6 @@ main <- function() {
   reduced_x_train <- reduce_with_pca(x_train, pca_result, n_features_pca[3]) # Index 3 corresponds to the highest threshold value
   reduced_x_test <- reduce_with_pca(x_test, pca_result, n_features_pca[3])
 
-  # # Test with non-reduced dataset
-  # cat("Confusion Matrix for model with non-reduced dataset:")
-  # test_model(x_train, y_train, x_test, y_test)
-  #
-  # # Test with reduced dataset
-  # cat("Confusion Matrix for model with reduced dataset using PCA:")
-  # test_model(reduced_x_train, y_train, reduced_x_test, y_test)
-
   # SVD
   svd_result <- calculate_svd(x_train)
 
@@ -177,13 +156,6 @@ main <- function() {
   reduced_x_train <- reduce_with_svd(svd_result, n_features_svd[3])
   reduced_x_test <- reduce_with_svd(svd_result, n_features_svd[3])
 
-  # # Test with non-reduced dataset
-  # cat("Confusion Matrix for model with non-reduced dataset:")
-  # test_model(x_train, y_train, x_test, y_test)
-  #
-  # # Test with reduced dataset
-  # cat("Confusion Matrix for model with reduced dataset using SVD:")
-  # test_model(reduced_x_train, y_train, reduced_x_test, y_test)
 }
 
 main()
