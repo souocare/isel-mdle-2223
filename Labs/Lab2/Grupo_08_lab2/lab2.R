@@ -94,6 +94,7 @@ main <- function() {
   diabetes_dataset <- read_data(diabetes_path)
   diabetes_dataset_ex3 <- diabetes_dataset
   # remove labels
+  diabetes_dataset_labels <- diabetes_dataset[, ncol(diabetes_dataset)]
   diabetes_dataset <- diabetes_dataset[, -ncol(diabetes_dataset)]
   influenza_dataset <- read_data(influenza_path)
 
@@ -142,9 +143,12 @@ main <- function() {
   influenza_reduced_svd <- reduce_with_svd(influenza_singular_values, 270)
 
   # 3.
-  data_matrix <- as.matrix(diabetes_dataset)
-  unsupervised_discretization <- discretize(data_matrix, "frequency", 5)
-  View(unsupervised_discretization)
+
+  # Unsupervised
+  for (i in 1:ncol(diabetes_dataset)) {
+    aux <-discretize(diabetes_dataset[,i], "frequency")
+    print(levels(aux))
+  }
 
   diabetes_dataset_ex3$V9 <- as.factor(diabetes_dataset_ex3$V9)
   supervised_discretization <- discretizeDF.supervised(V9 ~ ., diabetes_dataset_ex3, 'mdlp')

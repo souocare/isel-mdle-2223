@@ -25,9 +25,7 @@ fun1 <- function(i) { #read CSV data
 }
 
 fun2 <- function(i) { #read and transpose CSV data
-  read.csv(paste(basepath, "train", i, sep = "/"), header = FALSE, stringsAsFactors = FALSE) %>%
-    t %>%
-    as.data.table
+  read.csv(paste(basepath, "train", i, sep = "/"), header = FALSE, stringsAsFactors = FALSE) %>% t %>% as.data.table
 }
 
 
@@ -41,11 +39,12 @@ df <- copy_to(sc, df.local)
 ################# G2 #######################
 #Glimpse of the data set
 #Visualise the dataset
+
 # a)
-View(sdf_schema(df))
+sdf_schema(df)
 
 # b)
-View(head(df))
+head(df)
 
 #c)
 num_rows <- sparklyr::sdf_nrow(df)
@@ -67,22 +66,16 @@ stopifnot(num_cols == expected_cols)
 idx <- c(1, 2, 5, 6, 9, 10, 11, 14, 16, 17, 19, 21, 24, 25, 26, 31, 32, 33, 34, 35, 41, 44, 49, 50, 54)
 
 #a)
-df.sel <- df %>% select(idx)
+df.sel <- df %>% select(all_of(idx))
 
 #b)
-View(head(df.sel))
+head(df.sel)
 
 ################# G4 #######################
 #Generating train and test data
 
 #a)
-#Define the seed to get comparable results
-set.seed(123)
-
-#Define the train and test sizes
-weights <- c(training = 2/3, test = 1/3)
-
-split_dff <- sdf_random_split(df, weights = weights)
+split_dff <- sdf_random_split(df, weights = c(training = 2/3, test = 1/3), seed = 123)
 
 df.train <- split_dff$training
 df.test <- split_dff$test
@@ -103,22 +96,24 @@ df.test$CLASS <- as.factor(df.test_r$CLASS)
 train_table <- table(df.train_r$CLASS)
 test_table <- table(df.test_r$CLASS)
 
+cat("\n\n")
 cat("Training dataset counts:\n")
 print(train_table)
 
+cat("\n\n")
 cat("\nTest dataset counts:\n")
 print(test_table)
 
-
 #Verify results using Spark
 
+cat("\n\n")
 cat("Training dataset counts using spark:\n")
 print(df_train_counts <- df.train %>%
   group_by(CLASS) %>%
   count() %>%
   collect())
 
-
+cat("\n\n")
 cat("\nTest dataset counts using spark:\n")
 print(df_test_counts <- df.test %>%
   group_by(CLASS) %>%
@@ -127,12 +122,12 @@ print(df_test_counts <- df.test %>%
 
 #c) e d)
 
-model <- ml_random_forest(df.train, formula = "CLASS ~ .")
+model <- ml_random_forest(df.train, formula = "CLASS ~ .", seed = 123, type = 'classification')
 
 predictions <- mdle.predict(model, df.test)
 
-mdle.printConfusionMatrix(predictions, "Random Forest Model")
-
+cat("\n\n")
+mdle.printConfusionMatrix(predictions, "Random Forest Model - Baseline")
 cat("\n\n")
 
 ################# G5 #######################
@@ -144,10 +139,10 @@ df.neg.train <- df.train %>% filter(CLASS == 0)
 df.pos.train <- df.train %>% filter(CLASS == 1)
 
 # Determine the fractions of each class to use in sample
-frac.pos <- sdf_nrow(df.pos.train) / sdf_nrow(df.train)
+frac.undersample <- sdf_nrow(df.pos.train) / sdf_nrow(df.train)
 
 # Undersample
-df.neg.train.undersampled <- sdf_sample(df.neg.train, fraction = frac.pos, replacement = F)
+df.neg.train.undersampled <- sdf_sample(df.neg.train, fraction = frac.undersample, replacement = F, seed = 123)
 
 # Combine
 df.train.undersampled <- sdf_bind_rows(df.pos.train, df.neg.train.undersampled)
@@ -161,19 +156,20 @@ cat("Number of instances in negative class after undersampling:", n_neg, "\n")
 
 # b)
 
-model <- ml_random_forest(df.train.undersampled, formula = "CLASS ~ .")
+model <- ml_random_forest(df.train.undersampled, formula = "CLASS ~ .", seed = 123, type = 'classification')
 predictions <- mdle.predict(model, df.test)
-mdle.printConfusionMatrix(predictions, "Random Forest Model")
 
+cat("\n\n")
+mdle.printConfusionMatrix(predictions, "Random Forest Model - Undersample")
 cat("\n\n")
 
 # c)
 
 # Determine the fractions of each class to use in sample
-frac.pos <- sdf_nrow(df.neg.train) / sdf_nrow(df.pos.train)
+frac.oversample <- sdf_nrow(df.neg.train) / sdf_nrow(df.pos.train)
 
 # Oversample
-df.pos.train.oversampled <- sdf_sample(df.pos.train, fraction = frac.pos, replacement = T)
+df.pos.train.oversampled <- sdf_sample(df.pos.train, fraction = frac.oversample, replacement = T, seed = 123)
 
 # Combine oversampled positive and negative classes
 df.train.oversampled <- sdf_bind_rows(df.pos.train.oversampled, df.neg.train)
@@ -187,10 +183,11 @@ cat("Number of instances in negative class after oversampling:", n_neg, "\n")
 
 # d)
 
-model <- ml_random_forest(df.train.oversampled, formula = formula)
+model <- ml_random_forest(df.train.oversampled, formula = "CLASS ~ .", seed = 123, type = 'classification')
 predictions <- mdle.predict(model, df.test)
-mdle.printConfusionMatrix(predictions, "Random Forest Model")
 
+cat("\n\n")
+mdle.printConfusionMatrix(predictions, "Random Forest Model - Oversample")
 cat("\n\n")
 
 # e)
@@ -203,11 +200,14 @@ df.train.blsmote <- BLSMOTE(df.train.data, df.train.labels, K = 7, C = 5, method
 
 # f)
 
-df.train.blsmote.spark <- copy_to(sc, df.train.blsmote$data)
+df.train.blsmote <- copy_to(sc, df.train.blsmote$data)
 
-model <- ml_random_forest(df.train.blsmote.spark, formula = "class ~ .")
+model <- ml_random_forest(df.train.blsmote, formula = "class ~ .", seed = 123, type = 'classification')
 predictions <- mdle.predict(model, df.test)
-mdle.printConfusionMatrix(predictions, "Random Forest Model")
+
+cat("\n\n")
+mdle.printConfusionMatrix(predictions, "Random Forest Model - Borderline SMOTE")
+cat("\n\n")
 
 ################# Spark cleanup ################
 spark_disconnect(sc)
