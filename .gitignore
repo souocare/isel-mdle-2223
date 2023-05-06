@@ -1,3 +1,7 @@
 .DS_Store
 .idea/
 .Rproj.user
+.Rhistory
+derby.log
+logs/
+.RData
