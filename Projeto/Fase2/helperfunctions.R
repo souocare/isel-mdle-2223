@@ -3,16 +3,14 @@
 # Mestrado em Engenharia Informática e de Computadores
 # MDLE
 # 
-# Material de apoio
+# Material de apoio (editado)
 #
-#########################################################
+##########################################################
 
 require(caret)
 require(e1071)
 
-mdle.printConfusionMatrix<-function(sp.pred, method)
-{
-  
+mdle.printConfusionMatrix <- function(sp.pred, method) {
   pred<-sp.pred %>% select('CLASS', 'prediction')  %>% collect
   pred$prediction<-round(pred$prediction)
   
@@ -25,21 +23,19 @@ mdle.printConfusionMatrix<-function(sp.pred, method)
   cat(noquote(paste("Kappa               :",format(round(cfxmat$overall[[2]], 3), nsmall = 3),"\n" )))
   cat(noquote(paste("Pos Pred Value      :",format(round(cfxmat$byClass[[3]], 3), nsmall = 3),"\n" )))
   cat(noquote(paste("Neg Pred Value      :",format(round(cfxmat$byClass[[4]], 3), nsmall = 3) )))
-  
-  
 }
 
-mdle.predict<-function(model,test)
-{
+mdle.predict<-function(model,test) {
   return (ml_predict(model,test))
 }
 
-mdle.printDataDimensions<-function(data, type) {
+mdle.printDataDimensions <- function(data, type) {
   cat("\nOriginal", type, "dataset dimensions:\n", "Rows =", n_rows <- sparklyr::sdf_nrow(data),
-      "Columns =", n_cols <- sparklyr::sdf_ncol(data), "\n")
+      "Columns =", n_cols <- sparklyr::sdf_ncol(data), "\n"
+  )
 }
 
-mdle.printDataClassCount<-function(data, type, method) {
+mdle.printDataClassCount <- function(data, type, method) {
   cat("\n", method, type, "data class counts:")
-  print(df.counts <- data %>% group_by(CLASS) %>% count() %>% collect())
+  print(df.counts <- data %>% group_by(LABEL) %>% count() %>% collect())
 }
