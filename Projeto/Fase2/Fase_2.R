@@ -96,22 +96,24 @@ train_svd_result <- calculate_svd(df.train.local[, -1])
 test_svd_result <- calculate_svd(df.test.local[, -1])
 
 print("Train data - number of features based on SVD:")
-train_n_features_svd <- calculate_number_of_features(train_svd_result$d, thresholds)
-
-print("Test data - number of features based on SVD:")
-test_n_features_svd <- calculate_number_of_features(test_svd_result$d, thresholds)
-
-reduced_x_train <- reduce_with_svd(train_svd_result, train_n_features_svd[3])
-df.train <- cbind(df.train.l, data.frame(reduced_x_train)) #Bind them together (labels in first column)
-df.train <- copy_to(sc, df.train) #Copy a local data frame to a remote source
-
-reduced_x_test <- reduce_with_svd(test_svd_result, test_n_features_svd[3])
-df.test <- cbind(df.test.l, data.frame(reduced_x_test)) #Bind them together (labels in first column)
-df.test <- copy_to(sc, df.train) #Copy a local data frame to a remote source
+  train_n_features_svd <- calculate_number_of_features(train_svd_result$d, thresholds)
+  
+  print("Test data - number of features based on SVD:")
+  test_n_features_svd <- calculate_number_of_features(test_svd_result$d, thresholds)
+  
+  reduced_x_train <- reduce_with_svd(train_svd_result, train_n_features_svd[3])
+  df.train <- cbind(df.train.l, data.frame(reduced_x_train)) #Bind them together (labels in first column)
+  df.train <- copy_to(sc, df.train) #Copy a local data frame to a remote source
+  
+  reduced_x_test <- reduce_with_svd(test_svd_result, test_n_features_svd[3])
+  df.test <- cbind(df.test.l, data.frame(reduced_x_test)) #Bind them together (labels in first column)
+  df.test <- copy_to(sc, df.train) #Copy a local data frame to a remote source
 
 ################# Instance manipulation ################
 df.train.neg <- df.train %>% filter(CLASS == 0) #Filter for negative classes
 df.train.pos <- df.train %>% filter(CLASS == 1) #Filter for positive classes
+
+mdle.printDataClassCount(df.train, "train", "Normal")
 
 #Undersampling
 frac.undersampling <- sdf_nrow(df.train.pos) / sdf_nrow(df.train) #Determine the fraction
@@ -140,6 +142,16 @@ df.train.blsmote <- copy_to(sc, df.train.blsmote.local$data) #Copy a local data 
 mdle.printDataClassCount(df.train.oversampled, "train", "BL-SMOTE")
 
 ################# Data classification ################
+svm_model <- ml_linear_svc(df.train, formula = "CLASS ~ .")
+predictions <- mdle.predict(svm_model, df.test)
+mdle.printConfusionMatrix(predictions, "Support vector classification  - Normal")
+
+rf_model <- ml_random_forest(df.train, formula = "CLASS ~ .", seed = 123, type = 'auto')
+predictions <- mdle.predict(rf_model, df.test)
+mdle.printConfusionMatrix(predictions, "Random forest  - Normal")
+
+
+
 svm_model <- ml_linear_svc(df.train.undersampled, formula = "CLASS ~ .")
 predictions <- mdle.predict(svm_model, df.test)
 mdle.printConfusionMatrix(predictions, "Support vector classification  - Undersample")
