@@ -29,13 +29,13 @@ mdle.predict<-function(model,test) {
   return (ml_predict(model,test))
 }
 
-mdle.printDataDimensions <- function(data, type) {
-  cat("\nOriginal", type, "dataset dimensions:\n", "Rows =", n_rows <- sparklyr::sdf_nrow(data),
+mdle.printDataDimensions <- function(data, msg) {
+  cat("\n", msg, "\n", "Rows =", n_rows <- sparklyr::sdf_nrow(data),
       "Columns =", n_cols <- sparklyr::sdf_ncol(data), "\n"
   )
 }
 
-mdle.printDataClassCount <- function(data, type, method) {
-  cat("\n", method, type, "data  counts:")
+mdle.printDataClassCount <- function(data, msg) {
+  cat("\n", msg)
   print(df.counts <- data %>% group_by(CLASS) %>% count() %>% collect())
 }
