@@ -15,7 +15,7 @@ lapply(libs, require, character.only = TRUE)
 ss <- spark_connect('local')  
 
 #Load data to spark -----------
-ds<- spark_read_parquet(ss,"data/cancer.data.parquet")
+ds<- spark_read_parquet(ss,"../Labs/Lab5/data/cancer.data.parquet")
 
 #See that no features are created or removed
 def.pipe <- . %>% filter(F107>0)
@@ -23,7 +23,7 @@ def.pipe <- . %>% filter(F107>0)
 #Create a production pipeline -------
 prod.pipe <- 
   ml_pipeline(ss) %>%
-  ft_r_formula(CLASS ~ F1 + F2 + F3 + F4 + F9 + F10 + F20 + F21 + MLO + Xloc + Yloc + Xnloc + Ynloc + LB) %>% 
+  ft_r_formula(CLASS ~ F1 + F2 + F3 + F4 + F9 + F10 + F20 + F21 + MLO + Xloc + Yloc + Xnloc + Ynloc + LB ) %>% 
   ml_random_forest_classifier()
 
 
@@ -69,13 +69,13 @@ predictions %>%
 #Save the resulting Pipeline and Pipeline model------
 ml_save(
   prod.pipe,
-  "Cancer_production_pipeline",
+  "../Labs/Lab5/Cancer_production_pipeline",
   overwrite = TRUE
 )
 
 ml_save(
   ds.pipe.fit,
-  "Cancer_production_pipeline_model",
+  "../Labs/Lab5/Cancer_production_pipeline_model",
   overwrite = TRUE
 )
 

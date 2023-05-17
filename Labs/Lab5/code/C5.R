@@ -43,7 +43,7 @@ ds.prep <- fx.dataprep(ds) %>% fx.datafsample
 #Put Path for you case
 p<-"/home/Grupo8/AP4"
 model <- ml_load(ss, "../Labs/Lab5/Cancer_production_pipeline_model")
-
+spark_disconnect(ss)
 
 #See the error
 ml_transform(model, ds.prep[[1]])%>%
