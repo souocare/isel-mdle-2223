@@ -21,7 +21,7 @@ lapply(libs, require, character.only = TRUE)
 ss <- spark_connect('local')  
 
 #load_data to spark
-ds<- spark_read_parquet(ss,"data/cancer.data.parquet")
+ds<- spark_read_parquet(ss,"../Labs/Lab5/data/cancer.data.parquet")
 
 #create an empty pipeline
 def.pipe <- . %>% filter(F107>0) %>% 
@@ -30,4 +30,6 @@ def.pipe <- . %>% filter(F107>0) %>%
 
 ds.id <- def.pipe(ds)  
 print(sdf_describe(ds.id))
+#descrição do dataset
+
 spark_disconnect(ss)
