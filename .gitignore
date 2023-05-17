@@ -5,3 +5,9 @@
 derby.log
 logs/
 .RData
+Labs/Lab5/data/cancer.data.parquet/part-00000-71eeaa15-9b07-4c28-8857-b9957270986b-c000.snappy.parquet
+Labs/Lab5/data/cancer.data.parquet/.part-00000-71eeaa15-9b07-4c28-8857-b9957270986b-c000.snappy.parquet.crc
+Labs/Lab5/data/cancer.data.parquet/.part-00001-71eeaa15-9b07-4c28-8857-b9957270986b-c000.snappy.parquet.crc
+Labs/Lab5/data/cancer.data.parquet/_SUCCESS
+Labs/Lab5/data/cancer.data.parquet/part-00001-71eeaa15-9b07-4c28-8857-b9957270986b-c000.snappy.parquet
+Labs/Lab5/data/cancer.data
