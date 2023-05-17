@@ -64,7 +64,7 @@ fx.run<<-function()
   ss <- spark_connect('local')  
   
   #load_data to spark
-  ds<- spark_read_parquet(ss,"data/cancer.data.parquet")
+  ds<- spark_read_parquet(ss,"../Labs/Lab5/data/cancer.data.parquet")
   
   #Some data manipulation
   ds.id<-

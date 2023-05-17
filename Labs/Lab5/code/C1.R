@@ -20,8 +20,20 @@ ss <- spark_connect('local')
 
 #load_data to spark
 system.time(
-  ds<- spark_read_parquet(ss,"data/cancer.data.parquet")
+  ds<- spark_read_parquet(ss,"../Labs/Lab5/data/cancer.data.parquet")
 )
+
+"
+Elapsed Time is the time charged to the CPU(s) for the expression.
+
+User Time is the wall clock time. The time that you as a user experienced.
+
+Usually both times are relatively close. But they may vary in some other situations. For example:
+
+If elapsed time > user time, this means that the CPU is waiting around for some other operations (may be external) to be done.
+If elapsed time < user time, this means that your machine has multiple cores and is able to use them
+"
+
 
 #Some data manipulation
 system.time(
