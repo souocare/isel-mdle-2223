@@ -21,7 +21,7 @@ lapply(libs, require, character.only = TRUE)
 ss <- spark_connect('local')  
 
 #load_data to spark
-ds<- spark_read_parquet(ss,"data/cancer.data.parquet")
+ds<- spark_read_parquet(ss,"../Labs/Lab5/data/cancer.data.parquet")
 
 def.pipe <- . %>% filter(F107>0) %>% 
   arrange(IFID) %>% mutate(id = row_number()) %>% 
@@ -32,6 +32,7 @@ prod.pipe <-
   ml_pipeline(ss) %>%
   ft_r_formula(CLASS ~ .) %>% 
   ml_random_forest_classifier()
+
 
 
 #Generate dataset for training and testing  
@@ -62,13 +63,13 @@ class(ds.pipe.fit.test)
 
 ml_save(
   prod.pipe,
-  "Cancer_production_pipeline",
+  "../Labs/Lab5/Cancer_production_pipeline",
   overwrite = TRUE
 )
 
 ml_save(
   ds.pipe.fit,
-  "Cancer_production_pipeline_model",
+  "../Labs/Lab5/Cancer_production_pipeline_model",
   overwrite = TRUE
 )
 
