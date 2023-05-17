@@ -49,3 +49,30 @@ system.time(
 )    
 
 spark_disconnect(ss)
+
+
+#RESULTS
+"
+> #load_data to spark
+> system.time(
++   ds<- spark_read_parquet(ss,\"../Labs/Lab5/data/cancer.data.parquet\")
++ )
+   user  system elapsed 
+  0.358   0.008   0.860 
+> #Some data manipulation
+> system.time(
++   ds.id<-
++     ds %>% 
++     filter(F107>0) %>% 
++     arrange(IFID) %>%
++     mutate(id = row_number())
++ )  
+   user  system elapsed 
+  0.015   0.000   0.016 
+> system.time(
++   sdf_describe(ds.id)
++ )    
+   user  system elapsed 
+  0.409   0.023   9.170 
+"
+
