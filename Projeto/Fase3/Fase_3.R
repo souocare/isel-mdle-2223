@@ -3,24 +3,21 @@
 # ISEL - Instituto Superior de Engenharia de Lisboa              #
 # MDLE - Mineração de Dados em Larga Escala                      #
 #                                                                #
-# Projeto - Fase 2                                               #
+# Projeto - Fase 3                                               #
 #                                                                #
-# Data - 15/05/2023                                              #
+# Data - 01/06/2023                                              #
 #                                                                #
 # Autores - Grupo 08: Pedro Diogo A47573, Gonçalo Fonseca A50185 #
 #                                                                #
 ##################################################################
 
 ################# Preparation ################
-library(dplyr) #Data manipulation
-library(sparklyr) #Spark 
-library(smotefamily) #For SMOTE sampling
-library(data.table) #More efficient data.frame
+libs = c('sparklyr', 'dplyr','data.table', 'smotefamily')
+lapply(libs, require, character.only = TRUE)
+
+source("Fase3/helperfunctions.R")
 
 set.seed(123)
-
-if (!exists("printConfusionMatrix", mode = "function"))
-  source("Fase2/helperfunctions.R")
 
 ################# Spark setup ################
 spark_disconnect_all() #Just preventive code
@@ -89,7 +86,7 @@ df.train <- copy_to(sc, df.train) #Copy a local data frame to Spark
 
 reduced_x_test <- scale(df.test.local[, -1], scale = FALSE) %*% svd_result$v[, 1:n_features[3]]
 df.test <- cbind(df.test.l, data.frame(reduced_x_test)) #Bind them together (labels in first column)
-df.test <- copy_to(sc, df.train) #Copy a local data frame to Spark
+df.test <- copy_to(sc, df.test) #Copy a local data frame to Spark
 
 mdle.printDataDimensions(df.train, "SVD reduced train dataset dimensions:")
 mdle.printDataDimensions(df.test, "SVD reduced test dataset dimensions:")
@@ -126,41 +123,50 @@ mdle.printDataClassCount(df.train.oversampled, "BL-SMOTE train data class counts
 
 ################# Data classification ################
 
-#Baseline
-svm_model <- ml_linear_svc(df.train, formula = "CLASS ~ .")
-predictions <- mdle.predict(svm_model, df.test)
-mdle.printConfusionMatrix(predictions, "Support vector classification  - Baseline")
+#Create a pipelines
+svc_pipeline <- ml_pipeline(sc) %>%
+  ft_r_formula("CLASS ~ .") %>%
+  ml_linear_svc()
 
-rf_model <- ml_random_forest(df.train, formula = "CLASS ~ .", seed = 123, type = 'classification')
-predictions <- mdle.predict(rf_model, df.test)
-mdle.printConfusionMatrix(predictions, "Random forest  - Baseline")
+rf_pipeline <- ml_pipeline(sc) %>%
+  ft_r_formula("CLASS ~ .") %>%
+  ml_random_forest_classifier()
+
+#Baseline
+rf_baseline_fit <- ml_fit(rf_pipeline, df.train)
+rf_baseline_preds <- ml_predict(rf_baseline_fit, df.test)
+print(metrics_func(rf_baseline_preds, "SVD | Baseline | Random Forest"))
+
+svc_baseline_fit <- ml_fit(svc_pipeline, df.train)
+svc_baseline_preds <- ml_predict(svc_baseline_fit, df.test)
+print(metrics_func(svc_baseline_preds, "SVD | Baseline | SVC"))
 
 #Undersample
-svm_model <- ml_linear_svc(df.train.undersampled, formula = "CLASS ~ .")
-predictions <- mdle.predict(svm_model, df.test)
-mdle.printConfusionMatrix(predictions, "Support vector classification  - Undersample")
+rf_undersample_fit <- ml_fit(rf_pipeline, df.train.undersampled)
+rf_undersample_preds <- ml_predict(rf_undersample_fit, df.test)
+print(metrics_func(rf_undersample_preds, "SVD | Undersample | Random Forest"))
 
-rf_model <- ml_random_forest(df.train.undersampled, formula = "CLASS ~ .", seed = 123, type = 'classification')
-predictions <- mdle.predict(rf_model, df.test)
-mdle.printConfusionMatrix(predictions, "Random forest  - Undersample")
+svc_undersample_fit <- ml_fit(svc_pipeline, df.train.undersampled)
+svc_undersample_preds <- ml_predict(svc_undersample_fit, df.test)
+print(metrics_func(svc_undersample_preds, "SVD | Undersample | SVC"))
 
-#Oversample
-svm_model <- ml_linear_svc(df.train.oversampled, formula = "CLASS ~ .")
-predictions <- mdle.predict(svm_model, df.test)
-mdle.printConfusionMatrix(predictions, "Support vector classification  - Oversample")
+# #Oversample
+rf_oversample_fit <- ml_fit(rf_pipeline, df.train.oversampled)
+rf_oversample_preds <- ml_predict(rf_oversample_fit, df.test)
+print(metrics_func(rf_oversample_preds, "SVD | Oversample | Random Forest"))
 
-rf_model <- ml_random_forest(df.train.oversampled, formula = "CLASS ~ .", seed = 123, type = 'classification')
-predictions <- mdle.predict(rf_model, df.test)
-mdle.printConfusionMatrix(predictions, "Random forest  - Oversample")
+svc_oversample_fit <- ml_fit(svc_pipeline, df.train.oversampled)
+svc_oversample_preds <- ml_predict(svc_oversample_fit, df.test)
+print(metrics_func(svc_oversample_preds, "SVD | Oversample | SVC"))
 
-#BL-SMOTE
-svm_model <- ml_linear_svc(df.train.blsmote, formula = "class ~ .")
-predictions <- mdle.predict(svm_model, df.test)
-mdle.printConfusionMatrix(predictions, "Support vector classification  - BL-SMOTE")
+# #BL-SMOTE TODO
+# svm_model <- ml_linear_svc(df.train.blsmote, formula = "class ~ .")
+# predictions <- mdle.predict(svm_model, df.test)
+# mdle.printConfusionMatrix(predictions, "Support vector classification  - BL-SMOTE")
+# 
+# rf_model <- ml_random_forest(df.train.blsmote, formula = "class ~ .", seed = 123, type = 'classification')
+# predictions <- mdle.predict(rf_model, df.test)
+# mdle.printConfusionMatrix(predictions, "Random forest  - BL-SMOTE")
 
-rf_model <- ml_random_forest(df.train.blsmote, formula = "class ~ .", seed = 123, type = 'classification')
-predictions <- mdle.predict(rf_model, df.test)
-mdle.printConfusionMatrix(predictions, "Random forest  - BL-SMOTE")
-
-################# Spark cleanup ################
-# spark_disconnect(sc)
+# ################# Spark cleanup ################
+# # spark_disconnect(sc)
