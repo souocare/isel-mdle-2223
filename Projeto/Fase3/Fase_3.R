@@ -27,10 +27,10 @@ sc <- spark_connect('local', version = '3.3.2', hadoop_version = '3', config = l
 basepath <- paste(getwd(), "/Influenza-Outbreak-Dataset", sep = '')
 
 train.data <- c("train_data_1.csv") #The training data to use
-train.labels <- c("train_labels_41.csv") #The training labels for the data
+train.labels <- c("train_labels_1.csv") #The training labels for the data
 
 test.data <- c("test_data_1.csv") #The testing data to use
-test.labels <- c("test_labels_41.csv") #The testing labels for the data
+test.labels <- c("test_labels_1.csv") #The testing labels for the data
 
 fun1 <- function(i, type) { #Read CSV data
   print(paste(basepath, type, i, sep = "/"))
@@ -163,7 +163,7 @@ mdle.printConfusionMatrix(svc_predictions[[2]], "SVD | Undersample | SVC")
 mdle.printConfusionMatrix(rf_predictions[[3]], "SVD | Oversample | Random Forest")
 mdle.printConfusionMatrix(svc_predictions[[3]], "SVD | Oversample | SVC")
 
-# #BL-SMOTE
+#BL-SMOTE
 rf_smote_fit <- ml_fit(rf_pipeline_smote, df.train.blsmote)
 rf_smote_preds <- ml_predict(rf_smote_fit, df.test)
 mdle.printConfusionMatrix(rf_smote_preds, "SVD | BL-SMOTE | Random Forest")

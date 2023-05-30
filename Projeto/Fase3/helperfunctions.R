@@ -10,7 +10,6 @@
 
 require(caret)
 require(e1071)
-require(mltools)
 
 mdle.printConfusionMatrix <- function(sp.pred, msg) {
   auc <- sp.pred %>% ml_binary_classification_evaluator(
@@ -42,7 +41,6 @@ mdle.printConfusionMatrix <- function(sp.pred, msg) {
   cat(noquote(paste("False Positive Rate    :",format(round(metrics[3], 3), nsmall = 3),"\n" )))
   cat(noquote(paste("False Negative Rate    :",format(round(metrics[4], 3), nsmall = 3),"\n" )))
   cat(noquote(paste("AUC                    :",format(round(metrics[5], 3), nsmall = 3),"\n" )))
-  cat(noquote(paste("MCC                    :",format(round(mcc(pred, class), 3), nsmall = 3),"\n" )))
   cat(noquote("---------------------------------------------------------------\n"))
 }
 
