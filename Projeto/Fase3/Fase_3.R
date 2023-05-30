@@ -27,10 +27,10 @@ sc <- spark_connect('local', version = '3.3.2', hadoop_version = '3', config = l
 basepath <- paste(getwd(), "/Influenza-Outbreak-Dataset", sep = '')
 
 train.data <- c("train_data_1.csv") #The training data to use
-train.labels <- c("train_labels_1.csv") #The training labels for the data
+train.labels <- c("train_labels_41.csv") #The training labels for the data
 
 test.data <- c("test_data_1.csv") #The testing data to use
-test.labels <- c("test_labels_1.csv") #The testing labels for the data
+test.labels <- c("test_labels_41.csv") #The testing labels for the data
 
 fun1 <- function(i, type) { #Read CSV data
   print(paste(basepath, type, i, sep = "/"))
@@ -123,7 +123,7 @@ mdle.printDataClassCount(df.train.oversampled, "BL-SMOTE train data class counts
 
 ################# Data classification ################
 
-#Create a pipelines
+#Create pipelines
 svc_pipeline <- ml_pipeline(sc) %>%
   ft_r_formula("CLASS ~ .") %>%
   ml_linear_svc()
@@ -132,41 +132,45 @@ rf_pipeline <- ml_pipeline(sc) %>%
   ft_r_formula("CLASS ~ .") %>%
   ml_random_forest_classifier()
 
-#Baseline
-rf_baseline_fit <- ml_fit(rf_pipeline, df.train)
-rf_baseline_preds <- ml_predict(rf_baseline_fit, df.test)
-print(metrics_func(rf_baseline_preds, "SVD | Baseline | Random Forest"))
+rf_pipeline_smote <- ml_pipeline(sc) %>%
+  ft_r_formula("class ~ .") %>%
+  ml_random_forest_classifier()
 
-svc_baseline_fit <- ml_fit(svc_pipeline, df.train)
-svc_baseline_preds <- ml_predict(svc_baseline_fit, df.test)
-print(metrics_func(svc_baseline_preds, "SVD | Baseline | SVC"))
+svc_pipeline_smote <- ml_pipeline(sc) %>%
+  ft_r_formula("class ~ .") %>%
+  ml_linear_svc()
+
+fit_predict_function <- function(train, pipeline, test) {
+  fitted_pipeline <- ml_fit(pipeline, train)
+  
+  predictions <- ml_predict(fitted_pipeline, test)
+  
+  return (predictions)
+}
+training_list <- list(df.train, df.train.undersampled, df.train.oversampled)
+rf_predictions <- lapply(training_list, fit_predict_function, pipeline = rf_pipeline, test = df.test)
+svc_predictions <- lapply(training_list, fit_predict_function, pipeline = svc_pipeline, test = df.test)
+
+#Baseline
+mdle.printConfusionMatrix(rf_predictions[[1]], "SVD | Baseline | Random Forest")
+mdle.printConfusionMatrix(svc_predictions[[1]], "SVD | Baseline | SVC")
 
 #Undersample
-rf_undersample_fit <- ml_fit(rf_pipeline, df.train.undersampled)
-rf_undersample_preds <- ml_predict(rf_undersample_fit, df.test)
-print(metrics_func(rf_undersample_preds, "SVD | Undersample | Random Forest"))
+mdle.printConfusionMatrix(rf_predictions[[2]], "SVD | Undersample | Random Forest")
+mdle.printConfusionMatrix(svc_predictions[[2]], "SVD | Undersample | SVC")
 
-svc_undersample_fit <- ml_fit(svc_pipeline, df.train.undersampled)
-svc_undersample_preds <- ml_predict(svc_undersample_fit, df.test)
-print(metrics_func(svc_undersample_preds, "SVD | Undersample | SVC"))
+#Oversample
+mdle.printConfusionMatrix(rf_predictions[[3]], "SVD | Oversample | Random Forest")
+mdle.printConfusionMatrix(svc_predictions[[3]], "SVD | Oversample | SVC")
 
-# #Oversample
-rf_oversample_fit <- ml_fit(rf_pipeline, df.train.oversampled)
-rf_oversample_preds <- ml_predict(rf_oversample_fit, df.test)
-print(metrics_func(rf_oversample_preds, "SVD | Oversample | Random Forest"))
+# #BL-SMOTE
+rf_smote_fit <- ml_fit(rf_pipeline_smote, df.train.blsmote)
+rf_smote_preds <- ml_predict(rf_smote_fit, df.test)
+mdle.printConfusionMatrix(rf_smote_preds, "SVD | BL-SMOTE | Random Forest")
 
-svc_oversample_fit <- ml_fit(svc_pipeline, df.train.oversampled)
-svc_oversample_preds <- ml_predict(svc_oversample_fit, df.test)
-print(metrics_func(svc_oversample_preds, "SVD | Oversample | SVC"))
-
-# #BL-SMOTE TODO
-# svm_model <- ml_linear_svc(df.train.blsmote, formula = "class ~ .")
-# predictions <- mdle.predict(svm_model, df.test)
-# mdle.printConfusionMatrix(predictions, "Support vector classification  - BL-SMOTE")
-# 
-# rf_model <- ml_random_forest(df.train.blsmote, formula = "class ~ .", seed = 123, type = 'classification')
-# predictions <- mdle.predict(rf_model, df.test)
-# mdle.printConfusionMatrix(predictions, "Random forest  - BL-SMOTE")
+svc_smote_fit <- ml_fit(svc_pipeline_smote, df.train.blsmote)
+svc_smote_preds <- ml_predict(svc_smote_fit, df.test)
+mdle.printConfusionMatrix(svc_smote_preds, "SVD | BL-SMOTE | SVC")
 
 # ################# Spark cleanup ################
-# # spark_disconnect(sc)
+# spark_disconnect(sc)
