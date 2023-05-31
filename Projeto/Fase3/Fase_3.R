@@ -145,9 +145,11 @@ fit_predict_function <- function(train, pipeline, test) {
   
   predictions <- ml_predict(fitted_pipeline, test)
   
-  return (predictions)
+  return (c(predictions, fitted_pipeline))
 }
+
 training_list <- list(df.train, df.train.undersampled, df.train.oversampled)
+
 rf_predictions <- lapply(training_list, fit_predict_function, pipeline = rf_pipeline, test = df.test)
 svc_predictions <- lapply(training_list, fit_predict_function, pipeline = svc_pipeline, test = df.test)
 
@@ -171,6 +173,31 @@ mdle.printConfusionMatrix(rf_smote_preds, "SVD | BL-SMOTE | Random Forest")
 svc_smote_fit <- ml_fit(svc_pipeline_smote, df.train.blsmote)
 svc_smote_preds <- ml_predict(svc_smote_fit, df.test)
 mdle.printConfusionMatrix(svc_smote_preds, "SVD | BL-SMOTE | SVC")
+
+# ################# Tune Hyperparameters ################
+
+grid <- list(
+  random_forest = list(
+    num_trees = c(5:10),
+    max_depth = c(5:10)
+  )
+)
+
+rf_cv <- ml_cross_validator(
+  sc,
+  estimator = rf_pipeline, estimator_param_maps = grid,
+  evaluator = ml_binary_classification_evaluator(sc),
+  num_folds = 10,
+  parallelism = 3
+)
+
+cv_model <- ml_fit(rf_cv, df.train)
+
+print(ml_validation_metrics(cv_model))
+
+predictions <- mdle.predict(cv_model$best_model, df.test)
+mdle.printConfusionMatrix(predictions, "After tuning hyperparameters")
+
 
 # ################# Spark cleanup ################
 # spark_disconnect(sc)
